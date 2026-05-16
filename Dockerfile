@@ -1,12 +1,16 @@
-FROM python:3.11-slim AS builder
+# Stage 1: Build dependencies
+FROM python:3.11-alpine AS builder
 WORKDIR /app
+RUN apk add --no-cache gcc musl-dev linux-headers
 COPY requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
-FROM python:3.11-slim AS runner
+# Stage 2: Final minimal runtime environment
+FROM python:3.11-alpine AS runner
 WORKDIR /app
 
-RUN useradd -u 8888 appuser && mkdir -p /app && chown -R appuser:appuser /app
+# Run as non-root user for enhanced security
+RUN adduser -D -u 8888 appuser && chown -R appuser:appuser /app
 USER appuser
 
 COPY --from=builder /root/.local /home/appuser/.local
